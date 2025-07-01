@@ -1,4 +1,4 @@
-namespace AnimeCatalog.Application.DTOs;
+namespace AnimeCatalog.Application.Features.Anime.DTOs;
 
 public class AnimeDto
 {
@@ -8,4 +8,5 @@ public class AnimeDto
     public string Summary { get; set; } = string.Empty;
     public DateTime CreatedAt { get; set; }
     public DateTime UpdatedAt { get; set; }
+    public DateTime? DeletedAt { get; set; }
 }
