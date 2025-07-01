@@ -16,12 +16,15 @@ public class AnimeRepository : IAnimeRepository
 
     public async Task<Anime> CreateAsync(Anime anime)
     {
+        anime.CreatedAt = DateTime.UtcNow;
+        anime.UpdatedAt = DateTime.UtcNow;
         await _context.Animes.AddAsync(anime);
         return anime;
     }
 
     public async Task<Anime> UpdateAsync(Anime anime)
     {
+        anime.UpdatedAt = DateTime.UtcNow;
         _context.Entry(anime).State = EntityState.Modified;
         await _context.SaveChangesAsync();
         return anime;
@@ -32,28 +35,36 @@ public class AnimeRepository : IAnimeRepository
         var anime = await _context.Animes.FindAsync(id);
         if (anime == null) return false;
 
-        _context.Animes.Remove(anime);
+        anime.DeletedAt = DateTime.UtcNow;
+        anime.UpdatedAt = DateTime.UtcNow;
+        _context.Entry(anime).State = EntityState.Modified;
         return true;
     }
 
     public async Task<Anime?> GetByIdAsync(int id)
     {
-        return await _context.Animes.FindAsync(id);
+        return await _context.Animes
+            .AsNoTracking()
+            .FirstOrDefaultAsync(a => a.Id == id);
     }
 
     public async Task<IEnumerable<Anime>> GetAllAsync()
     {
-        return await _context.Animes.ToListAsync();
+        return await _context.Animes
+            .AsNoTracking()
+            .ToListAsync();
     }
 
     public async Task<bool> ExistsAsync(int id)
     {
-        return await _context.Animes.AnyAsync(a => a.Id == id);
+        return await _context.Animes
+            .AsNoTracking()
+            .AnyAsync(a => a.Id == id);
     }
 
     public async Task<IEnumerable<Anime>> SearchAsync(int? id = null, string? name = null, string? director = null)
     {
-        var query = _context.Animes.AsQueryable();
+        var query = _context.Animes.AsNoTracking();
 
         if (id.HasValue)
             query = query.Where(a => a.Id == id);
