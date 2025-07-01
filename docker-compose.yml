@@ -4,7 +4,7 @@ services:
     container_name: sqlserver
     restart: unless-stopped
     environment:
-      SA_PASSWORD: "senha"
+      SA_PASSWORD: "SenhaForte123!"
       ACCEPT_EULA: "Y"
     ports:
       - "1433:1433"
@@ -19,7 +19,7 @@ services:
     depends_on:
       - sqlserver
     environment:
-      ConnectionString__DbConfig: "Server=sqlserver;Database=AnimeCatalog;User Id=sa;Password=senha"
+      ConnectionString__DbConfig: "Server=sqlserver;Database=AnimeCatalog;User Id=sa;Password=SenhaForte123!"
     ports:
       - "80:80"
     restart: unless-stopped

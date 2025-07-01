@@ -1,6 +1,6 @@
-using AnimeCatalog.Application.DTOs;
+using AnimeCatalog.Application.Features.Anime.DTOs;
 using MediatR;
 
 namespace AnimeCatalog.Application.Features.Anime.Queries;
 
-public record GetAllAnimesQuery : IRequest<IEnumerable<AnimeDto>>;
+public record GetAllAnimesQuery() : IRequest<IEnumerable<AnimeDto>>;
