@@ -1,0 +1,28 @@
+services:
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: sqlserver
+    restart: unless-stopped
+    environment:
+      SA_PASSWORD: "senha"
+      ACCEPT_EULA: "Y"
+    ports:
+      - "1433:1433"
+    volumes:
+      - sqlserver_data:/var/opt/mssql
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: anime-catalog-api
+    depends_on:
+      - sqlserver
+    environment:
+      ConnectionString__DbConfig: "Server=sqlserver;Database=AnimeCatalog;User Id=sa;Password=senha"
+    ports:
+      - "80:80"
+    restart: unless-stopped
+
+volumes:
+  sqlserver_data:
