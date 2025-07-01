@@ -1,4 +1,4 @@
-namespace AnimeCatalog.Application.DTOs;
+namespace AnimeCatalog.Application.Features.Anime.DTOs;
 
 public class UpdateAnimeDto
 {
