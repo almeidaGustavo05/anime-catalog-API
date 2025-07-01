@@ -1,4 +1,4 @@
-using AnimeCatalog.Application.DTOs;
+using AnimeCatalog.Application.Features.Anime.DTOs;
 using AnimeCatalog.Domain.Interfaces;
 using AutoMapper;
 using MediatR;

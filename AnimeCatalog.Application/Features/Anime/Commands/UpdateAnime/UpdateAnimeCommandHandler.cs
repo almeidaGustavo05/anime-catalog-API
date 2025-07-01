@@ -1,4 +1,4 @@
-using AnimeCatalog.Application.DTOs;
+using AnimeCatalog.Application.Features.Anime.DTOs;
 using AnimeCatalog.Domain.Interfaces;
 using AutoMapper;
 using MediatR;
@@ -6,7 +6,7 @@ using Microsoft.Extensions.Logging;
 
 namespace AnimeCatalog.Application.Features.Anime.Commands.UpdateAnime;
 
-public class UpdateAnimeCommandHandler : IRequestHandler<UpdateAnimeCommand, AnimeDto?>
+public class UpdateAnimeCommandHandler : IRequestHandler<UpdateAnimeCommand, AnimeDto>
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly IMapper _mapper;
@@ -19,7 +19,7 @@ public class UpdateAnimeCommandHandler : IRequestHandler<UpdateAnimeCommand, Ani
         _logger = logger;
     }
 
-    public async Task<AnimeDto?> Handle(UpdateAnimeCommand request, CancellationToken cancellationToken)
+    public async Task<AnimeDto> Handle(UpdateAnimeCommand request, CancellationToken cancellationToken)
     {
         try
         {
@@ -29,7 +29,7 @@ public class UpdateAnimeCommandHandler : IRequestHandler<UpdateAnimeCommand, Ani
             if (existingAnime == null)
             {
                 _logger.LogWarning("Anime não encontrado para atualização. ID: {AnimeId}", request.Id);
-                return null;
+                throw new InvalidOperationException($"Anime with ID {request.Id} not found.");
             }
 
             _mapper.Map(request.AnimeDto, existingAnime);
