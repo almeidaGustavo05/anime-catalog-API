@@ -1,12 +1,14 @@
 using AnimeCatalog.Application.Features.Anime.DTOs;
 using AnimeCatalog.Domain.Interfaces;
+using AnimeCatalog.Domain.Pagination;
+using AnimeCatalog.Domain.Exceptions;
 using AutoMapper;
 using MediatR;
 using Microsoft.Extensions.Logging;
 
 namespace AnimeCatalog.Application.Features.Anime.Queries;
 
-public class GetAllAnimesQueryHandler : IRequestHandler<GetAllAnimesQuery, IEnumerable<AnimeDto>>
+public class GetAllAnimesQueryHandler : IRequestHandler<GetAllAnimesQuery, PageList<AnimeDto>>
 {
     private readonly IAnimeRepository _animeRepository;
     private readonly IMapper _mapper;
@@ -22,22 +24,31 @@ public class GetAllAnimesQueryHandler : IRequestHandler<GetAllAnimesQuery, IEnum
         _logger = logger;
     }
 
-    public async Task<IEnumerable<AnimeDto>> Handle(GetAllAnimesQuery request, CancellationToken cancellationToken)
+    public async Task<PageList<AnimeDto>> Handle(GetAllAnimesQuery request, CancellationToken cancellationToken)
     {
         try
         {
-            _logger.LogInformation("Buscando todos os animes");
+            _logger.LogInformation("Buscando todos os animes - Página: {PageNumber}, Tamanho: {PageSize}", 
+                request.PageParams.PageNumber, request.PageParams.PageSize);
             
-            var animes = await _animeRepository.GetAllAsync();
-            var animeDtos = _mapper.Map<IEnumerable<AnimeDto>>(animes);
+            var pagedAnimes = await _animeRepository.GetAllAsync(request.PageParams);
+            var animeDtos = _mapper.Map<List<AnimeDto>>(pagedAnimes.Items);
             
-            _logger.LogInformation("Encontrados {Count} animes", animeDtos.Count());
-            return animeDtos;
+            var result = new PageList<AnimeDto>(
+                animeDtos, 
+                pagedAnimes.TotalCount, 
+                pagedAnimes.CurrentPage, 
+                pagedAnimes.PageSize);
+            
+            _logger.LogInformation("Encontrados {Count} animes de {TotalCount} total", 
+                animeDtos.Count, pagedAnimes.TotalCount);
+                
+            return result;
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Erro ao buscar todos os animes");
-            throw;
+            _logger.LogError("Erro ao buscar todos os animes. Erro: {Error}", ex.Message);
+            throw new DatabaseException("getAll", "Erro ao buscar animes no banco de dados", ex);
         }
     }
 }

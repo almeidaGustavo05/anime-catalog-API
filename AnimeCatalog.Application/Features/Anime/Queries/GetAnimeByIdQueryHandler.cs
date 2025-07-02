@@ -1,12 +1,13 @@
 using AnimeCatalog.Application.Features.Anime.DTOs;
 using AnimeCatalog.Domain.Interfaces;
+using AnimeCatalog.Domain.Exceptions;
 using AutoMapper;
 using MediatR;
 using Microsoft.Extensions.Logging;
 
 namespace AnimeCatalog.Application.Features.Anime.Queries;
 
-public class GetAnimeByIdQueryHandler : IRequestHandler<GetAnimeByIdQuery, AnimeDto?>
+public class GetAnimeByIdQueryHandler : IRequestHandler<GetAnimeByIdQuery, AnimeDto>
 {
     private readonly IAnimeRepository _animeRepository;
     private readonly IMapper _mapper;
@@ -22,7 +23,7 @@ public class GetAnimeByIdQueryHandler : IRequestHandler<GetAnimeByIdQuery, Anime
         _logger = logger;
     }
 
-    public async Task<AnimeDto?> Handle(GetAnimeByIdQuery request, CancellationToken cancellationToken)
+    public async Task<AnimeDto> Handle(GetAnimeByIdQuery request, CancellationToken cancellationToken)
     {
         try
         {
@@ -33,7 +34,7 @@ public class GetAnimeByIdQueryHandler : IRequestHandler<GetAnimeByIdQuery, Anime
             if (anime == null)
             {
                 _logger.LogWarning("Anime com ID {AnimeId} não encontrado", request.Id);
-                return null;
+                throw new AnimeNotFoundException(request.Id);
             }
             
             var animeDto = _mapper.Map<AnimeDto>(anime);
@@ -41,10 +42,14 @@ public class GetAnimeByIdQueryHandler : IRequestHandler<GetAnimeByIdQuery, Anime
             
             return animeDto;
         }
+        catch (AnimeNotFoundException)
+        {
+            throw;
+        }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Erro ao buscar anime com ID: {AnimeId}", request.Id);
-            throw;
+            _logger.LogError("Erro ao buscar anime com ID: {AnimeId}. Erro: {Error}", request.Id, ex.Message);
+            throw new DatabaseException("getById", "Erro ao buscar anime no banco de dados", ex);
         }
     }
 }
