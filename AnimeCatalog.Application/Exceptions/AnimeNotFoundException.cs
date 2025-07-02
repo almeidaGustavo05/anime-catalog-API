@@ -1,6 +1,7 @@
 using System.Net;
+using AnimeCatalog.Domain.Exceptions;
 
-namespace AnimeCatalog.Domain.Exceptions;
+namespace AnimeCatalog.Application.Exceptions;
 
 public class AnimeNotFoundException : BaseException
 {

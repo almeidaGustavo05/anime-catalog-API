@@ -1,5 +1,5 @@
 using System.Text.Json;
-using AnimeCatalog.Domain.Exceptions;
+using AnimeCatalog.Application.Exceptions;
 using System.Net;
 
 namespace AnimeCatalog.API.Middleware;

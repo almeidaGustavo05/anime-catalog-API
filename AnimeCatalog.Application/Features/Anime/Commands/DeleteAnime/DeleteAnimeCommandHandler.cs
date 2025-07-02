@@ -1,6 +1,6 @@
 using AnimeCatalog.Application.Features.Anime.Commands.DeleteAnime;
 using AnimeCatalog.Domain.Interfaces;
-using AnimeCatalog.Domain.Exceptions;
+using AnimeCatalog.Application.Exceptions;
 using MediatR;
 using Microsoft.Extensions.Logging;
 
