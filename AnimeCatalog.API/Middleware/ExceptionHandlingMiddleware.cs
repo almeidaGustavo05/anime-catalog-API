@@ -1,6 +1,6 @@
+using System.Text.Json;
 using AnimeCatalog.Domain.Exceptions;
 using System.Net;
-using System.Text.Json;
 
 namespace AnimeCatalog.API.Middleware;
 
@@ -30,57 +30,33 @@ public class ExceptionHandlingMiddleware
 
     private static async Task HandleExceptionAsync(HttpContext context, Exception exception)
     {
-        context.Response.ContentType = "application/json";
-        
-        var response = exception switch
-        {
-            BaseException baseEx => new ErrorResponse
-            {
-                Message = baseEx.Message,
-                ErrorCode = baseEx.ErrorCode,
-                StatusCode = (int)baseEx.StatusCode,
-                Details = baseEx.Details
-            },
-            
-            ArgumentException argEx => new ErrorResponse
-            {
-                Message = argEx.Message,
-                ErrorCode = "INVALID_ARGUMENT",
-                StatusCode = (int)HttpStatusCode.BadRequest
-            },
-            
-            UnauthorizedAccessException => new ErrorResponse
-            {
-                Message = "Acesso não autorizado.",
-                ErrorCode = "UNAUTHORIZED",
-                StatusCode = (int)HttpStatusCode.Unauthorized
-            },
-            
-            _ => new ErrorResponse
-            {
-                Message = "Ocorreu um erro interno no servidor.",
-                ErrorCode = "INTERNAL_SERVER_ERROR",
-                StatusCode = (int)HttpStatusCode.InternalServerError
-            }
-        };
-        
-        context.Response.StatusCode = response.StatusCode;
-        
-        var jsonResponse = JsonSerializer.Serialize(response, new JsonSerializerOptions
-        {
-            PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-            WriteIndented = true
-        });
-        
-        await context.Response.WriteAsync(jsonResponse);
-    }
-}
+        var response = context.Response;
+        response.ContentType = "application/json";
 
-public class ErrorResponse
-{
-    public string Message { get; set; } = string.Empty;
-    public string ErrorCode { get; set; } = string.Empty;
-    public int StatusCode { get; set; }
-    public DateTime Timestamp { get; set; } = DateTime.UtcNow;
-    public object? Details { get; set; }
+        var (statusCode, message, errorCode) = exception switch
+        {
+            AnimeNotFoundException ex => (StatusCodes.Status404NotFound, ex.Message, "ANIME_NOT_FOUND"),
+            AnimeAlreadyExistsException ex => (StatusCodes.Status409Conflict, ex.Message, "ANIME_ALREADY_EXISTS"),
+            ValidationException ex => (StatusCodes.Status400BadRequest, ex.Message, "VALIDATION_ERROR"),
+            BusinessRuleException ex => (StatusCodes.Status422UnprocessableEntity, ex.Message, "BUSINESS_RULE_VIOLATION"),
+            DatabaseException ex => (StatusCodes.Status500InternalServerError, ex.Message, "DATABASE_ERROR"),
+            ArgumentException ex => (StatusCodes.Status400BadRequest, ex.Message, "INVALID_ARGUMENT"),
+            UnauthorizedAccessException => (StatusCodes.Status401Unauthorized, "Acesso não autorizado.", "UNAUTHORIZED"),
+            _ => (StatusCodes.Status500InternalServerError, "Ocorreu um erro interno no servidor.", "INTERNAL_SERVER_ERROR")
+        };
+
+        response.StatusCode = statusCode;
+
+        var errorResponse = new
+        {
+            Message = message,
+            ErrorCode = errorCode,
+            StatusCode = statusCode,
+            Timestamp = DateTime.UtcNow
+        };
+
+        var result = JsonSerializer.Serialize(errorResponse);
+
+        await response.WriteAsync(result);
+    }
 }
