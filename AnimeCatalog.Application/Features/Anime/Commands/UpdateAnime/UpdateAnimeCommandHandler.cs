@@ -1,5 +1,6 @@
 using AnimeCatalog.Application.Features.Anime.DTOs;
 using AnimeCatalog.Domain.Interfaces;
+using AnimeCatalog.Domain.Exceptions;
 using AutoMapper;
 using MediatR;
 using Microsoft.Extensions.Logging;
@@ -29,7 +30,13 @@ public class UpdateAnimeCommandHandler : IRequestHandler<UpdateAnimeCommand, Ani
             if (existingAnime == null)
             {
                 _logger.LogWarning("Anime não encontrado para atualização. ID: {AnimeId}", request.Id);
-                throw new InvalidOperationException($"Anime with ID {request.Id} not found.");
+                throw new AnimeNotFoundException(request.Id);
+            }
+
+            var duplicateAnime = await _unitOfWork.AnimeRepository.GetByNameAsync(request.AnimeDto.Name);
+            if (duplicateAnime != null && duplicateAnime.Id != request.Id)
+            {
+                throw new AnimeAlreadyExistsException(request.AnimeDto.Name);
             }
 
             _mapper.Map(request.AnimeDto, existingAnime);
@@ -43,10 +50,18 @@ public class UpdateAnimeCommandHandler : IRequestHandler<UpdateAnimeCommand, Ani
 
             return result;
         }
+        catch (AnimeNotFoundException)
+        {
+            throw;
+        }
+        catch (AnimeAlreadyExistsException)
+        {
+            throw;
+        }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Erro ao atualizar anime ID: {AnimeId}", request.Id);
-            throw;
+            _logger.LogError("Erro ao atualizar anime ID: {AnimeId}. Erro: {Error}", request.Id, ex.Message);
+            throw new DatabaseException("update", "Erro ao atualizar anime no banco de dados", ex);
         }
     }
 }
