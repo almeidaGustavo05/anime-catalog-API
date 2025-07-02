@@ -1,5 +1,6 @@
 using AnimeCatalog.Application.Features.Anime.Commands.DeleteAnime;
 using AnimeCatalog.Domain.Interfaces;
+using AnimeCatalog.Domain.Exceptions;
 using MediatR;
 using Microsoft.Extensions.Logging;
 
@@ -26,7 +27,7 @@ public class DeleteAnimeCommandHandler : IRequestHandler<DeleteAnimeCommand, boo
             if (!exists)
             {
                 _logger.LogWarning("Anime não encontrado para exclusão. ID: {AnimeId}", request.Id);
-                return false;
+                throw new AnimeNotFoundException(request.Id);
             }
 
             var result = await _unitOfWork.AnimeRepository.DeleteAsync(request.Id);
@@ -38,15 +39,19 @@ public class DeleteAnimeCommandHandler : IRequestHandler<DeleteAnimeCommand, boo
             }
             else
             {
-                _logger.LogWarning("Falha ao excluir anime. ID: {AnimeId}", request.Id);
+                throw new DatabaseException("delete", "Falha ao excluir anime do banco de dados");
             }
 
             return result;
         }
+        catch (AnimeNotFoundException)
+        {
+            throw;
+        }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Erro ao excluir anime ID: {AnimeId}", request.Id);
-            throw;
+            _logger.LogError("Erro ao excluir anime ID: {AnimeId}. Erro: {Error}", request.Id, ex.Message);
+            throw new DatabaseException("delete", "Erro ao excluir anime no banco de dados", ex);
         }
     }
 }

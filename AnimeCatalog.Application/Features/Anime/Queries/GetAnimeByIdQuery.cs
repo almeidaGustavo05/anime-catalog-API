@@ -3,4 +3,4 @@ using MediatR;
 
 namespace AnimeCatalog.Application.Features.Anime.Queries;
 
-public record GetAnimeByIdQuery(int Id) : IRequest<AnimeDto?>;
+public record GetAnimeByIdQuery(int Id) : IRequest<AnimeDto>;
