@@ -1,7 +1,7 @@
 using AnimeCatalog.Application.Features.Anime.DTOs;
 using AnimeCatalog.Domain.Interfaces;
 using AnimeCatalog.Domain.Pagination;
-using AnimeCatalog.Domain.Exceptions;
+using AnimeCatalog.Application.Exceptions;
 using AutoMapper;
 using MediatR;
 using Microsoft.Extensions.Logging;
