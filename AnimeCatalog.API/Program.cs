@@ -1,30 +1,49 @@
 using AnimeCatalog.API.Middleware;
 using AnimeCatalog.Application;
 using AnimeCatalog.Infrastructure;
+using Serilog;
 
-var builder = WebApplication.CreateBuilder(args);
+Log.Logger = new LoggerConfiguration()
+    .WriteTo.Console()
+    .WriteTo.File("logs/anime-catalog-.txt", rollingInterval: RollingInterval.Day)
+    .CreateLogger();
 
-// Add services to the container.
-builder.Services.AddControllers();
+try
+{
+    var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddApplication();
-builder.Services.AddInfrastructure(builder.Configuration);
+    builder.Host.UseSerilog();
 
-builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+    // Add services to the container.
+    builder.Services.AddControllers();
 
-var app = builder.Build();
+    builder.Services.AddApplication();
+    builder.Services.AddInfrastructure(builder.Configuration);
 
-// Configure the HTTP request pipeline.
-app.UseSwagger();
-app.UseSwaggerUI();
+    builder.Services.AddEndpointsApiExplorer();
+    builder.Services.AddSwaggerGen();
 
-app.UseMiddleware<ExceptionHandlingMiddleware>();
+    var app = builder.Build();
 
-app.UseHttpsRedirection();
+    // Configure the HTTP request pipeline.
+    app.UseSwagger();
+    app.UseSwaggerUI();
 
-app.UseAuthorization();
+    app.UseMiddleware<ExceptionHandlingMiddleware>();
 
-app.MapControllers();
+    app.UseHttpsRedirection();
 
-app.Run();
+    app.UseAuthorization();
+
+    app.MapControllers();
+
+    app.Run();
+}
+catch (Exception ex)
+{
+    Log.Fatal(ex, "Aplicação falhou ao iniciar");
+}
+finally
+{
+    Log.CloseAndFlush();
+}
