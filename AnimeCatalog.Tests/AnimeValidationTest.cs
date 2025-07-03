@@ -1,97 +1,70 @@
-using AnimeCatalog.Domain.Entities;
-using AnimeCatalog.Application.Exceptions;
+using AnimeCatalog.Application.Features.Anime.Commands.CreateAnime;
+using AnimeCatalog.Application.Features.Anime.Commands.UpdateAnime;
+using AnimeCatalog.Application.Features.Anime.DTOs;
+using FluentValidation.TestHelper;
 using Xunit;
 
 namespace AnimeCatalog.Tests;
 
 public class AnimeValidationTest
 {
-    [Fact]
-    public void Should_Throw_ValidationException_When_Name_Is_Empty()
-    {
-        var anime = new Anime
-        {
-            Name = "",
-            Director = "Test Director",
-            Summary = "Test Summary"
-        };
+    private readonly CreateAnimeCommandValidator _createValidator = new();
+    private readonly UpdateAnimeCommandValidator _updateValidator = new();
 
-        var ex = Assert.Throws<ValidationException>(() => ValidateAnime(anime));
-        Assert.Contains("Name", ex.Errors.Keys);
+    [Fact]
+    public void CreateAnimeCommand_Should_Validate_Required_Fields()
+    {
+        var command = new CreateAnimeCommand(new CreateAnimeDto { Name = "", Director = "", Summary = "" });
+        var result = _createValidator.TestValidate(command);
+
+        result.ShouldHaveValidationErrorFor(x => x.AnimeDto.Name);
+        result.ShouldHaveValidationErrorFor(x => x.AnimeDto.Director);
+        result.ShouldHaveValidationErrorFor(x => x.AnimeDto.Summary);
     }
 
     [Fact]
-    public void Should_Throw_ValidationException_When_Director_Is_Empty()
+    public void CreateAnimeCommand_Should_Validate_Max_Length()
     {
-        var anime = new Anime
+        var command = new CreateAnimeCommand(new CreateAnimeDto
         {
-            Name = "Test Anime",
-            Director = "",
-            Summary = "Test Summary"
-        };
+            Name = new string('a', 201),
+            Director = new string('b', 101),
+            Summary = new string('c', 1001)
+        });
+        var result = _createValidator.TestValidate(command);
 
-        var ex = Assert.Throws<ValidationException>(() => ValidateAnime(anime));
-        Assert.Contains("Director", ex.Errors.Keys);
+        result.ShouldHaveValidationErrorFor(x => x.AnimeDto.Name);
+        result.ShouldHaveValidationErrorFor(x => x.AnimeDto.Director);
+        result.ShouldHaveValidationErrorFor(x => x.AnimeDto.Summary);
     }
 
     [Fact]
-    public void Should_Throw_ValidationException_When_Summary_Is_Empty()
+    public void UpdateAnimeCommand_Should_Validate_Id_And_Required_Fields()
     {
-        var anime = new Anime
-        {
-            Name = "Test Anime",
-            Director = "Test Director",
-            Summary = ""
-        };
+        var command = new UpdateAnimeCommand(0, new UpdateAnimeDto { Name = "", Director = "", Summary = "" });
+        var result = _updateValidator.TestValidate(command);
 
-        var ex = Assert.Throws<ValidationException>(() => ValidateAnime(anime));
-        Assert.Contains("Summary", ex.Errors.Keys);
+        result.ShouldHaveValidationErrorFor(x => x.Id);
+        result.ShouldHaveValidationErrorFor(x => x.AnimeDto.Name);
     }
 
     [Fact]
-    public void Should_Pass_Validation_With_Valid_Anime()
+    public void Valid_Commands_Should_Pass_Validation()
     {
-        var anime = new Anime
+        var createCommand = new CreateAnimeCommand(new CreateAnimeDto
         {
-            Name = "Valid Anime",
+            Name = "Valid Name",
             Director = "Valid Director",
             Summary = "Valid Summary"
-        };
-
-        var exception = Record.Exception(() => ValidateAnime(anime));
-        Assert.Null(exception);
-    }
-
-    [Fact]
-    public void Should_Throw_ValidationException_With_Multiple_Errors()
-    {
-        var anime = new Anime
+        });
+        var updateCommand = new UpdateAnimeCommand(1, new UpdateAnimeDto
         {
-            Name = "",
-            Director = "",
+            Name = "Valid Name",
+            Director = "Valid Director",
             Summary = "Valid Summary"
-        };
+        });
 
-        var ex = Assert.Throws<ValidationException>(() => ValidateAnime(anime));
-        Assert.Equal(2, ex.Errors.Count);
-        Assert.Contains("Name", ex.Errors.Keys);
-        Assert.Contains("Director", ex.Errors.Keys);
-    }
-
-    private static void ValidateAnime(Anime anime)
-    {
-        var errors = new Dictionary<string, string[]>();
-
-        if (string.IsNullOrWhiteSpace(anime.Name))
-            errors.Add("Name", new[] { "Nome não pode ser vazio." });
-
-        if (string.IsNullOrWhiteSpace(anime.Director))
-            errors.Add("Director", new[] { "Diretor não pode ser vazio." });
-
-        if (string.IsNullOrWhiteSpace(anime.Summary))
-            errors.Add("Summary", new[] { "Resumo não pode ser vazio." });
-
-        if (errors.Any())
-            throw new ValidationException(errors);
+        _createValidator.TestValidate(createCommand).ShouldNotHaveAnyValidationErrors();
+        _updateValidator.TestValidate(updateCommand).ShouldNotHaveAnyValidationErrors();
     }
 }
