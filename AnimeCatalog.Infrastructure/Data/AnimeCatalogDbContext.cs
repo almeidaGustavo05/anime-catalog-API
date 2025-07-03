@@ -5,11 +5,8 @@ namespace AnimeCatalog.Infrastructure.Data;
 
 public class AnimeCatalogDbContext : DbContext
 {
-    public AnimeCatalogDbContext(DbContextOptions<AnimeCatalogDbContext> options) : base(options)
-    {
-    }
-
-    public required DbSet<Anime> Animes { get; set; } 
+    public AnimeCatalogDbContext(DbContextOptions<AnimeCatalogDbContext> options) : base(options) { }
+    public DbSet<Anime> Animes { get; set; } 
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
